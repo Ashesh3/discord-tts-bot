@@ -1,4 +1,3 @@
-```markdown
 # Discord TTS Bot 🎙️
 
 A simple Text-To-Speech (TTS) bot for Discord. It allows members to use commands or type in a specific channel to make the bot speak the given text in a voice channel.

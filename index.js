@@ -4,6 +4,7 @@ const {
   joinVoiceChannel,
   createAudioResource,
   createAudioPlayer,
+  getVoiceConnection,
 } = require("@discordjs/voice");
 const tts = require("google-translate-tts");
 const { Readable } = require("stream");
@@ -23,10 +24,6 @@ client.once("ready", async () => {
   console.log("Ready!");
 
   const commandsData = [
-    {
-      name: "join",
-      description: "Join the voice channel",
-    },
     {
       name: "leave",
       description: "Leave the voice channel",
@@ -56,8 +53,11 @@ client.on("interactionCreate", async (interaction) => {
   const { commandName } = interaction;
 
   if (commandName === "leave") {
-    if (interaction.guild.me.voice.channel) {
-      interaction.guild.me.voice.channel.leave();
+    if (interaction?.guild?.members?.me?.voice?.channel) {
+      const connection = getVoiceConnection(
+        interaction?.guild?.members?.me?.voice?.channel?.guild?.id
+      );
+      connection.destroy();
       await interaction.reply("Left the voice channel!");
     } else {
       await interaction.reply("I am not in a voice channel!");
@@ -71,14 +71,14 @@ client.on("interactionCreate", async (interaction) => {
       return user ? (user.globalName ? user.globalName : user.username) : match;
     });
 
-    if (!interaction.member.voice.channel.joinable)
+    if (!interaction?.member?.voice?.channel?.joinable)
       return interaction.channel.send(
         "I need permission to join your voice channel!"
       );
     const connection = joinVoiceChannel({
-      channelId: interaction.member.voice.channel.id,
-      guildId: interaction.member.voice.guild.id,
-      adapterCreator: interaction.member.voice.guild.voiceAdapterCreator,
+      channelId: interaction?.member?.voice?.channel?.id,
+      guildId: interaction?.member?.voice?.guild?.id,
+      adapterCreator: interaction?.member?.voice?.guild?.voiceAdapterCreator,
     });
     const player = createAudioPlayer();
     connection.subscribe(player);
@@ -91,7 +91,10 @@ client.on("interactionCreate", async (interaction) => {
     const resource = createAudioResource(stream);
     player.play(resource);
     return interaction.reply(
-      `${interaction.member.user.globalName} said ${text}`
+      `${
+        interaction?.member?.user?.globalName ||
+        interaction?.member?.user?.username
+      } said "${text}"`
     );
   }
 });
@@ -100,14 +103,14 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot || message.channel.name !== "tts") return;
 
   if (!message.content.startsWith("!")) {
-    if (!message.member.voice.channel.joinable)
+    if (!message.member?.voice?.channel?.joinable)
       return message.channel.send(
         "I need permission to join your voice channel!"
       );
     const connection = joinVoiceChannel({
-      channelId: message.member.voice.channel.id,
-      guildId: message.member.voice.guild.id,
-      adapterCreator: message.member.voice.guild.voiceAdapterCreator,
+      channelId: message?.member?.voice?.channel?.id,
+      guildId: message?.member?.voice?.guild?.id,
+      adapterCreator: message?.member?.voice?.guild?.voiceAdapterCreator,
     });
     const player = createAudioPlayer();
     connection.subscribe(player);
